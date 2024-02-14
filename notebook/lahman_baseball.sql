@@ -4,26 +4,39 @@
 
 /*1. Find all players in the database who played at Vanderbilt University. Create a list showing each player's first and last names as well as the total salary they earned in the major leagues. Sort this list in descending order by the total salary earned. Which Vanderbilt player earned the most money in the majors?*/
 
-SELECT *
-FROM people;
 
-
-SELECT namefirst, namelast, college.schoolid, SUM(salaries.salary) AS salary
-FROM people
-INNER JOIN collegeplaying as college
+SELECT DISTINCT p.playerid, p.namefirst, p.namelast, SUM(s.salary) AS total_salary
+FROM (
+    SELECT DISTINCT playerid
+    FROM collegeplaying
+    WHERE schoolid = 'vandy'
+) AS sub
+INNER JOIN people AS p 
 USING(playerid)
-INNER JOIN salaries
+INNER JOIN salaries AS s 
 USING(playerid)
-WHERE schoolid = 'vandy'
 GROUP BY 1,2,3
-ORDER BY salary DESC
--- David Price earned the most with a total salary of $245,553,888
+ORDER BY total_salary DESC;
 
-SELECT *
-FROM collegeplaying
-ORDER BY schoolid DESC
+-- David Price earned the most with a total salary of $81,851,296
+
 
 /*2. Using the fielding table, group players into three groups based on their position: label players with position OF as "Outfield", those with position "SS", "1B", "2B", and "3B" as "Infield", and those with position "P" or "C" as "Battery". Determine the number of putouts made by each of these three groups in 2016.*/
+
+SELECT positions, COUNT(playerid) AS player_count
+FROM (
+    SELECT playerid, 
+        CASE 
+            WHEN pos = 'OF' THEN 'Outfield'
+            WHEN pos IN ('SS', '1B', '2B', '3B') THEN 'Infield'
+            WHEN pos IN ('P', 'C') THEN 'Battery'
+        END AS positions
+    FROM fielding	  
+    WHERE yearid = 2016
+) AS sub
+GROUP BY 1;
+
+
 
 /*3. Find the average number of strikeouts per game by decade since 1920. Round the numbers you report to 2 decimal places. Do the same for home runs per game. Do you see any trends? (Hint: For this question, you might find it helpful to look at the **generate_series** function (https://www.postgresql.org/docs/9.1/functions-srf.html). If you want to see an example of this in action, check out this DataCamp video: https://campus.datacamp.com/courses/exploratory-data-analysis-in-sql/summarizing-and-aggregating-numeric-data?ex=6)*/
 
