@@ -37,22 +37,124 @@ FROM (
 GROUP BY 1;
 
 
+/*2. Using the fielding table, group players into three groups based on their position: label players with position OF as "Outfield", those with position "SS", "1B", "2B", and "3B" as "Infield", and those with position "P" or "C" as "Battery". Determine the number of putouts made by each of these three groups in 2016.*/
+
+
+WITH positions_players AS (
+	SELECT playerid, po,
+	  CASE 
+            WHEN pos = 'OF' THEN 'Outfield'
+            WHEN pos IN ('SS', '1B', '2B', '3B') THEN 'Infield'
+            WHEN pos IN ('P', 'C') THEN 'Battery'
+        END AS positions
+	FROM fielding	  
+    WHERE yearid = 2016
+)
+SELECT positions, COUNT(playerid) AS player_count, SUM(po) AS putout_amount
+FROM positions_players
+GROUP BY 1;
+
 
 /*3. Find the average number of strikeouts per game by decade since 1920. Round the numbers you report to 2 decimal places. Do the same for home runs per game. Do you see any trends? (Hint: For this question, you might find it helpful to look at the **generate_series** function (https://www.postgresql.org/docs/9.1/functions-srf.html). If you want to see an example of this in action, check out this DataCamp video: https://campus.datacamp.com/courses/exploratory-data-analysis-in-sql/summarizing-and-aggregating-numeric-data?ex=6)*/
 
+--ANSWER
+SELECT yearid /10 * 10 AS decade,
+	ROUND((SUM(so) * 1.0) / SUM(ghome), 2) AS avg_so,
+	ROUND((SUM(hr) * 1.0) / SUM(ghome), 2) AS avg_hr
+FROM teams
+WHERE yearid >= 1920
+GROUP BY 1
+ORDER BY 1;
+
 /*4. Find the player who had the most success stealing bases in 2016, where __success__ is measured as the percentage of stolen base attempts which are successful. (A stolen base attempt results either in a stolen base or being caught stealing.) Consider only players who attempted _at least_ 20 stolen bases. Report the players' names, number of stolen bases, number of attempts, and stolen base percentage.*/
 
-/*5. From 1970 to 2016, what is the largest number of wins for a team that did not win the world series? What is the smallest number of wins for a team that did win the world series? Doing this will probably result in an unusually small number of wins for a world series champion; determine why this is the case. Then redo your query, excluding the problem year. How often from 1970 to 2016 was it the case that a team with the most wins also won the world series? What percentage of the time?*/
+WITH stolen_bases AS(
+	SELECT playerid, sb, cs, p.namefirst, p.namelast
+FROM batting
+INNER JOIN people AS p 
+USING(playerid)	
+WHERE yearid = 2016 AND
+sb + cs > 19
+)
+SELECT playerid, namefirst, namelast, sb, cs, (sb *1.0)/(sb +cs) AS stolen_base_percentage
+FROM stolen_bases
+--GROUP BY 1,2,3,4,5
+ORDER BY 6 DESC;
+
+
+--ANSWER
+SELECT p.namefirst, p.namelast, sb, cs, (sb *1.0)/(sb +cs) AS stolen_base_percentage
+FROM batting
+INNER JOIN people AS p 
+USING(playerid)	
+WHERE yearid = 2016 AND
+sb + cs > 19
+ORDER BY 5 DESC;
+
+
+--5. From 1970 to 2016, what is the largest number of wins for a team that did not win the world series? 
+SELECT yearid, teamidloser, wins
+FROM seriespost
+WHERE yearid BETWEEN 1970 AND 2016
+ORDER BY 3 DESC
+--answer 4 wins is the but lost the series
+
+
+/*What is the smallest number of wins for a team that did win the world series? 
+Doing this will probably result in an unusually small number of wins for a world series champion; determine why this is the case. */
+
+SELECT yearid, teamidwinner, wins
+FROM seriespost
+WHERE yearid BETWEEN 1970 AND 2016
+ORDER BY 3 
+--answer 1 win is the smallest for a team that did win the world series
+
+SELECT yearid, teamidwinner, COUNT(wins)
+FROM seriespost
+WHERE yearid BETWEEN 1970 AND 2016
+GROUP BY 1,2
+ORDER BY 3
+
+
+
+/*Then redo your query, excluding the problem year. How often from 1970 to 2016 was it the case that a team with the most wins also won the world series? What percentage of the time?*/
+
+
 
 /*6. Which managers have won the TSN Manager of the Year award in both the National League (NL) and the American League (AL)? Give their full name and the teams that they were managing when they won the award.*/
 
+
+
+
+
 /*7. Which pitcher was the least efficient in 2016 in terms of salary / strikeouts? Only consider pitchers who started at least 10 games (across all teams). Note that pitchers often play for more than one team in a season, so be sure that you are counting all stats for each player.*/
+
+
+
+
 
 /*8. Find all players who have had at least 3000 career hits. Report those players' names, total number of hits, and the year they were inducted into the hall of fame (If they were not inducted into the hall of fame, put a null in that column.) Note that a player being inducted into the hall of fame is indicated by a 'Y' in the **inducted** column of the halloffame table.*/
 
+
+
+
+
 /*9. Find all players who had at least 1,000 hits for two different teams. Report those players' full names.*/
 
+
+
+
+
+
 /*10. Find all players who hit their career highest number of home runs in 2016. Consider only players who have played in the league for at least 10 years, and who hit at least one home run in 2016. Report the players' first and last names and the number of home runs they hit in 2016.*/
+
+
+
+
+
+
+
+
 
 --After finishing the above questions, here are some open-ended questions to consider.
 
